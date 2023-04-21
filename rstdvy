@@ -1,0 +1,49 @@
+use std::collections::HashMap;
+
+struct DeFiContract {
+    balances: HashMap<String, u64>,
+    total_supply: u64,
+    admin: String,
+}
+
+impl DeFiContract {
+    pub fn new(admin: String) -> DeFiContract {
+        let mut balances = HashMap::new();
+        balances.insert(admin.clone(), 1000);
+        DeFiContract {
+            balances,
+            total_supply: 1000,
+            admin,
+        }
+    }
+
+    pub fn transfer(&mut self, from: String, to: String, amount: u64) -> Result<(), String> {
+        let from_balance = self.balances.get(&from).ok_or("Account does not exist")?;
+        let to_balance = self.balances.get(&to).ok_or("Account does not exist")?;
+        if *from_balance < amount {
+            return Err("Insufficient balance".to_owned());
+        }
+        self.balances.insert(from.clone(), *from_balance - amount);
+        self.balances.insert(to.clone(), *to_balance + amount);
+        Ok(())
+    }
+
+    pub fn mint(&mut self, to: String, amount: u64) -> Result<(), String> {
+        if to != self.admin {
+            return Err("Only admin can mint tokens".to_owned());
+        }
+        self.balances.insert(to.clone(), self.balances.get(&to).unwrap_or(&0) + amount);
+        self.total_supply += amount;
+        Ok(())
+    }
+
+    pub fn burn(&mut self, from: String, amount: u64) -> Result<(), String> {
+        let from_balance = self.balances.get(&from).ok_or("Account does not exist")?;
+        if *from_balance < amount {
+            return Err("Insufficient balance".to_owned());
+        }
+        self.balances.insert(from.clone(), *from_balance - amount);
+        self.total_supply -= amount;
+        Ok(())
+    }
+}
